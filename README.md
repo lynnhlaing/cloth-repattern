@@ -8,9 +8,9 @@ For this project, we will be exploring repatterning of cloth in images in order 
 
 ### To-Do
 - Find image dataset
-- Edge detection to find cloth edges
-- Cloth edge selection using information from edge detection
-- Cloth silhouette mask generation
+- Edge detection to find cloth edges - COMPLETE
+- Cloth edge selection using information from edge detection - INITIAL FINISHED. REMOVE HUMAN MODEL FROM MASK.
+- Cloth silhouette mask generation - SET UP
 - Preserve depth and edge details within mask so the repattern is not flat.
 
 ## Texture Repatterning
