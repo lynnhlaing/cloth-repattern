@@ -89,8 +89,10 @@ class main:
 
         index_max = scipy.argmax(counts)                    # find most frequent
         peak = codes[index_max]
-        colour = binascii.hexlify(bytearray(int(c) for c in peak)).decode('ascii')
-        return colour
+        color = binascii.hexlify(bytearray(int(c) for c in peak)).decode('ascii')
+        if(len(color) > 6):
+            return color[:-2]
+        return color
 
     def new_texture(self):  #adding a new texture
         #TODO: keep a list of texture paths as they come in to use in synthesize_texture
