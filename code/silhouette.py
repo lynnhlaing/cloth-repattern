@@ -51,8 +51,8 @@ def create_clothing_mask(img):
 	#Change all possible-tagged values to respective foreground or background
 	mask = np.where((mask==2)|(mask==0),0,1).astype('uint8') 
 	# print(set((mask.flatten()).tolist()))
-	cv2.imshow("binary", img*mask[:,:,np.newaxis])
-	cv2.waitKey(200)
+	# cv2.imshow("binary", img*mask[:,:,np.newaxis])
+	# cv2.waitKey(200)
 	'''
 	NOTE: This currently only returns the initial mask of the entire model. We still need to remove the human features itself.
 	'''

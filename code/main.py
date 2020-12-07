@@ -15,6 +15,7 @@ from tqdm import tqdm
 IMAGE_PATH = './data/images'
 TEXTURE_PATH = './data/textures'
 MASK_PATH = './output/cloth-silhouettes'
+SYNTH_PATH = './output/synthesized-silhouettes'
 OUTPUT_PATH = './output/final-output'
 
 def main():
@@ -60,19 +61,34 @@ def main():
         if not args["silent"]:
             plt.imshow(cv2.cvtColor(image_mask*255, cv2.COLOR_BGR2RGB)); plt.show()
 
-        # cv2.imwrite(os.path.join(MASK_PATH, f'{img_name}_mask.png'),image_mask)
+        cv2.imwrite(os.path.join(MASK_PATH, f'{img_name}_mask.png'),image_mask*255)
 
         # TEXTURE REPATTERNING
-        # for texture_path in input_textures:
-        #     texture_name = os.path.splitext(os.path.split(texture_path)[-1])[0]
-        #     texture = cv2.imread(texture_path)
+        # hyperparameters
+        n_iterations=3
+        tilesize=42
+        overlapsize=7
+        print(np.shape(image_mask))
+        # print(np.nonzero(np.sum(image_mask,axis=0))[0][0],np.nonzero(np.sum(image_mask,axis=1))[0][0])
+        # print(np.nonzero(np.sum(image_mask,axis=0))[0][-1],np.nonzero(np.sum(image_mask,axis=1))[0][-1])
+        # outsize = (img.shape[0], img.shape[1])
+        #60,84,240,628, potentially dont need this, just use the image mask as the out
+        # print(outsize)
+        for texture_path in input_textures:
+            texture_name = os.path.splitext(os.path.split(texture_path)[-1])[0]
+            texture = cv2.imread(texture_path)
 
-        #     texture_fill = retexture.synthesize_texture(img,texture)
+            texture_fill = retexture.synthesize_texture(img,image_mask,texture,tilesize,overlapsize,1)
+            print(texture_fill)
+            cv2.imwrite(os.path.join(SYNTH_PATH, f'{img_name}_{texture_name}_synth_silhouette.png'),texture_fill)
+            if not args["silent"]:
+                plt.imshow(cv2.cvtColor((texture_fill).astype(np.uint8), cv2.COLOR_BGR2RGB)); plt.show()
+
         # # COMPOSITING
 
-        #     retextured = retexture.transfer_texture(img, texture_fill)
-        #     if not args["silent"]:
-        #         plt.imshow(cv2.cvtColor(retextured, cv2.COLOR_BGR2RGB)); plt.show()
-        #     cv2.imwrite(os.path.join(OUTPUT_PATH, f'{img_name}_{texture_name}.png'), retextured)
+            retextured = retexture.transfer_texture(img, image_mask, texture_fill)
+            if not args["silent"]:
+                plt.imshow(cv2.cvtColor((retextured).astype(np.uint8), cv2.COLOR_BGR2RGB)); plt.show()
+            cv2.imwrite(os.path.join(OUTPUT_PATH, f'{img_name}_{texture_name}.png'), retextured)
 
 main()

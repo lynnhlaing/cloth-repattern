@@ -89,40 +89,40 @@ def poisson_blend(source, mask, target, mix = False, strength = 1):
 
     return target
 
-for s in range(3,4):
-    source_path = './data/images/dress_' + str(i) + '.jpg'
-    mask_path = './output/cloth-silhouettes/dress_' + str(i) + '_mask.png'
-    target_path = './data/textures/texture-blue-jeans.jpg'
+# for s in range(3,4):
+#     source_path = './data/images/dress_' + str(i) + '.jpg'
+#     mask_path = './output/cloth-silhouettes/dress_' + str(i) + '_mask.png'
+#     target_path = './data/textures/texture-blue-jeans.jpg'
     
-    source = cv2.imread(source_path, cv2.IMREAD_COLOR)
-    target = cv2.imread(target_path, cv2.IMREAD_COLOR)
-    mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+#     source = cv2.imread(source_path, cv2.IMREAD_COLOR)
+#     target = cv2.imread(target_path, cv2.IMREAD_COLOR)
+#     mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
 
-    # BGR -> RGB:
-    source = source[..., ::-1]
-    target = target[..., ::-1]
+#     # BGR -> RGB:
+#     source = source[..., ::-1]
+#     target = target[..., ::-1]
 
-    lab = cv2.cvtColor(source, cv2.COLOR_BGR2LAB)
-    l, _, _ = cv2.split(lab)
-    clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
-    cl = clahe.apply(l)
+#     lab = cv2.cvtColor(source, cv2.COLOR_BGR2LAB)
+#     l, _, _ = cv2.split(lab)
+#     clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+#     cl = clahe.apply(l)
 
-    # grey_source = rgb2gray(source)
-    grey_source = gray2rgb(cl)
+#     # grey_source = rgb2gray(source)
+#     grey_source = gray2rgb(cl)
     
-    # uint8 -> float32
-    grey_source = grey_source.astype(np.float32) / 255.
-    target = target.astype(np.float32) / 255.
-    mask = np.round(mask.astype(np.float32) / 255.)
+#     # uint8 -> float32
+#     grey_source = grey_source.astype(np.float32) / 255.
+#     target = target.astype(np.float32) / 255.
+#     mask = np.round(mask.astype(np.float32) / 255.)
 
-    image = poisson_blend(grey_source, mask, target, mix = True, strength = 1)
+#     image = poisson_blend(grey_source, mask, target, mix = True, strength = 1)
 
-    output = (np.clip(image, 0., 1.) * 255.).astype(np.uint8)
-    grey_source = (np.clip(grey_source, 0., 1.) * 255.).astype(np.uint8)
+#     output = (np.clip(image, 0., 1.) * 255.).astype(np.uint8)
+#     grey_source = (np.clip(grey_source, 0., 1.) * 255.).astype(np.uint8)
 
-    mask_array = mask != 0
-    source[mask_array] = output[mask_array]
+#     mask_array = mask != 0
+#     source[mask_array] = output[mask_array]
 
-    output_dir = './output'
-    output_path = "%s/res_img%02d.jpg" % (output_dir, i)
-    cv2.imwrite(output_path, source[..., ::-1])
+#     output_dir = './output'
+#     output_path = "%s/res_img%02d.jpg" % (output_dir, i)
+#     cv2.imwrite(output_path, source[..., ::-1])
