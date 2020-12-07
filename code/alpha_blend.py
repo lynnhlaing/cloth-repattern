@@ -89,6 +89,7 @@ def poisson_blend(source, mask, target, mix = False, strength = 1):
 
     return target
 
+i = 1
 for s in range(3,4):
     source_path = './data/images/dress_' + str(i) + '.jpg'
     mask_path = './output/cloth-silhouettes/dress_' + str(i) + '_mask.png'

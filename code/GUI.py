@@ -4,11 +4,16 @@ from tkinter import ttk, colorchooser, filedialog
 from PIL import Image, ImageTk, ImageGrab
 import numpy as np
 import matplotlib.pyplot as plt
+import cv2
 import scipy
 import scipy.misc
 import scipy.cluster
 import binascii
 import os
+
+import retexture
+import silhouette
+import utils
 
 # os.environ["PATH"] += ":/usr/local/bin:/usr/local/bin/gs"
 
@@ -22,10 +27,15 @@ class main:
         self.old_y = None
         self.penwidth = 10
         self.text_var = StringVar()
+        self.binary_mask = []
+
+        self.source_img = []
+        self.texture_imgs = []
+        self.multi_mask = []
 
         self.drawWidgets()
-        self.prepare_mask()
-        self.draw_mask()
+        # self.prepare_mask()
+        # self.draw_mask()
 
         self.master.rowconfigure(1, weight=1)
 
@@ -33,10 +43,12 @@ class main:
         self.canvas.bind('<ButtonRelease-1>',self.reset)
 
     def start_retexture(self):
-        mask = self.export_mask()
-        plt.imshow(mask)
-        plt.show()
-        # synthesize_texture(mask...
+        self.multi_mask = self.export_mask()
+        custom_binary_mask = (self.multi_mask != 0) #the 0/1 mask of the drawn parts
+        # self.texture_imgs is a list of the np arrays 
+        # self.source_img is the uploaded source img (np array)
+
+        # synthesize_texture(mask, self.texture_imgs, ...
     
     def export_mask(self):  #changing the background color canvas
         fileName = "./output/cloth-silhouettes/custom_mask"
@@ -84,6 +96,7 @@ class main:
         #TODO: keep a list of texture paths as they come in to use in synthesize_texture
         ifile = filedialog.askopenfile(mode='rb',title='Choose a file')
         path = Image.open(ifile)
+        self.texture_imgs.append(np.asarray(path))
         path = path.crop([ 0, 0, 40, 40])
 
         color = "#" + self.common_color(path)
@@ -94,7 +107,16 @@ class main:
 
         self.textures.append((texture, color))
         self.draw_texture_objects()
-    
+
+    def upload_source(self):
+        ifile = filedialog.askopenfile(mode='rb',title='Choose a source')
+        path = Image.open(ifile)
+        img = np.asarray(path)
+        self.source_img = img
+        self.binary_mask = silhouette.create_clothing_mask(img)
+        self.prepare_mask()
+        self.draw_mask()
+        
     def draw_texture_objects(self):
         Label(self.controls, 
         text="Choose texture to apply: ",
@@ -118,12 +140,16 @@ class main:
             row += 1
 
     def prepare_mask(self):
-        img = Image.open(r"./output/cloth-silhouettes/dress_1_mask.png").convert('RGBA')
+        # img = Image.open(r"./output/cloth-silhouettes/dress_1_mask.png").convert('RGBA')
+        # arr=np.array(np.asarray(img))
+        # r,g,b,a = np.rollaxis(arr,axis=-1)  
+        # mask=((r==255)&(g==255)&(b==255))
+        # arr[mask,3]=0
 
-        arr=np.array(np.asarray(img))
-        r,g,b,a = np.rollaxis(arr,axis=-1)  
-        mask=((r==255)&(g==255)&(b==255))
-        arr[mask,3]=0
+        arr = np.zeros_like(self.binary_mask)
+        arr = np.dstack((arr, arr, arr, np.ones_like(self.binary_mask) * 255))
+        arr[(self.binary_mask == 1),3]=0
+
         img=Image.fromarray(arr,mode='RGBA')
 
         self.img = ImageTk.PhotoImage(img)
@@ -186,6 +212,9 @@ class main:
         
         self.canvas = Canvas(self.master,width=500,height=400,bg=self.color_bg)
         self.canvas.pack(fill=BOTH,expand=True)
+
+        self.new_texture_button= Button(self.controls, text = "Upload Source", command=self.upload_source) 
+        self.new_texture_button.grid(row=3,column=0,ipadx=10, ipady=5, pady = (25,0))
 
         self.new_texture_button= Button(self.controls, text = "Upload Texture", fg="green", command=self.new_texture) 
         self.new_texture_button.grid(row=4,column=0,ipadx=10, ipady=5, pady = 15)
