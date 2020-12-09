@@ -67,8 +67,6 @@ class main:
         
         plt.imshow(retextured.astype(np.uint8)); plt.show()
 
-<<<<<<< HEAD
-        # synthesize_texture(mask, self.texture_imgs, ...
 
     def add_eraser(self):
         array = np.ones((40,40))*255
@@ -78,8 +76,6 @@ class main:
         self.draw_texture_objects()
 
     
-=======
->>>>>>> retexture-integration
     def export_mask(self):  #changing the background color canvas
         fileName = "./output/cloth-silhouettes/custom_mask"
         # save postscipt image 

@@ -176,7 +176,7 @@ def synthesize_texture(source,mask,textures,tilesize,overlapsize,n_iter):
 
     imout = imout[:outsize[0],:outsize[1]]
     # print(imout.shape)
-    imout = np.multiply(imout, mask[:,:,np.newaxis])
+    imout = np.multiply(imout, (mask != 0).astype(int)[:,:,np.newaxis])
     # cv2.imshow("last Image", imout/255.0)
     # cv2.waitKey(1000)
 
