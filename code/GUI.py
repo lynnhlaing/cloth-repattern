@@ -37,6 +37,7 @@ class main:
         self.add_eraser()
 
         self.master.rowconfigure(1, weight=1)
+        self.master.resizable(False, False)
 
         self.canvas.bind('<B1-Motion>',self.paint) #draw the line 
         self.canvas.bind('<ButtonRelease-1>',self.reset)
@@ -70,7 +71,7 @@ class main:
 
         mask = np.zeros_like(data)[:, :, 0]
 
-        for i, (texture, val) in enumerate(self.textures):
+        for i, (texture, val) in enumerate(self.textures[1:]):
             h = val.lstrip('#')
             rgb = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
             color_match = (red == rgb[0]) & (blue == rgb[2]) & (green == rgb[1])
