@@ -24,17 +24,13 @@ def get_patch_to_insert_transfer(tilesize, overlapsize, to_fill, to_fill_mask, t
     Output:
     A patch of texture insert into the output image
     '''
-    
-    # TODO: Implement this function
-    # We can use the same minimum cut algorithm as before, but we also want our synthesized texture
-    # to have the same intensity as the source image. See webpage and paper for more details.
+
     filter_window = (tilesize,tilesize, 3)
     output_shape = tuple(np.subtract(texture.shape, filter_window) + 1) + filter_window
     strides = texture.strides + texture.strides
     patches = np.lib.stride_tricks.as_strided(texture,output_shape,strides)[...,::1,::1,:,:].squeeze()
 
     fill_SSD = np.zeros((patches.shape[0],patches.shape[1]))
-    # source_SSD = np.zeros((patches.shape[0],patches.shape[1]))
     # double overlap
     fill_SSD += np.einsum('ijklm,klm->ij', patches[:,:,:overlapsize,:overlapsize,:], to_fill[:overlapsize,:overlapsize,:])
     #left overlap
@@ -42,7 +38,6 @@ def get_patch_to_insert_transfer(tilesize, overlapsize, to_fill, to_fill_mask, t
     #right overlap
     fill_SSD += np.einsum('ijklm,klm->ij', patches[:,:,:overlapsize,overlapsize:,:], to_fill[:overlapsize,overlapsize:,:])
     #center overlap
-    #pretty sure we don't need to do this. because in the to_fill non overlap, the error is 0. 
     if np.max(to_fill[overlapsize:,overlapsize:,:]) != 0:
         fill_SSD += np.einsum('ijklm,klm->ij', patches[:,:,overlapsize:,overlapsize:,:], to_fill[overlapsize:,overlapsize:,:])
     fill_SSD += np.einsum('ijklm,klm->ij', patches, to_fill)
@@ -59,28 +54,12 @@ def get_patch_to_insert_transfer(tilesize, overlapsize, to_fill, to_fill_mask, t
     fill_SSD += np.einsum('ijklm, ijklm->ij', patches[:,:,:overlapsize,overlapsize:,:], patches[:,:,:overlapsize,overlapsize:,:])
     fill_SSD += np.einsum('ijk, ijk', to_fill[:overlapsize,overlapsize:,:], to_fill[:overlapsize,overlapsize:,:])
     #center overlap
-    #pretty sure we don't need to do this. because in the to_fill non overlap, the error is 0. 
     if np.max(to_fill[overlapsize:,overlapsize:,:]) != 0:
         fill_SSD += np.einsum('ijklm, ijklm->ij', patches[:,:,overlapsize:,overlapsize:,:], patches[:,:,overlapsize:,overlapsize:,:])
         fill_SSD += np.einsum('ijk, ijk', to_fill[overlapsize:,overlapsize:,:], to_fill[overlapsize:,overlapsize:,:])
     fill_SSD += np.einsum('ijklm, ijklm->ij', patches, patches)
     fill_SSD += np.einsum('ijk, ijk', to_fill, to_fill)
-    # fill_SSD *= alpha
-    # print(patches.shape, source.shape)
-    # source_SSD += np.einsum('ijklm,klm->ij', patches, source)
-    # print(False in np.equal(np.einsum('ijklm,klm->ij', patches, source),np.tensordot(patches,source,axes=([2,3,4],[0,1,2]))))
-    # source_SSD *= -2
-    # source_SSD += np.einsum('ijklm, ijklm->ij', patches, patches)
-    # print(np.allclose(np.multiply(patches,patches),np.einsum('ijklm, ijklm->ijklm', patches, patches)))
-    # print(np.sum(np.multiply(patches,patches),axis=(2,3,4)))
-    # print(np.sum(np.einsum('ijklm, ijklm->ijklm', patches, patches),axis=(2,3,4)))
-    # source_SSD += np.einsum('ijk, ijk', source, source)
-    # print(np.einsum('ijk, ijk', source, source)==np.sum(source**2))
-    # print(np.min(source_SSD),np.max(source_SSD))
 
-    # source_SSD *= (1-alpha)
-
-    # final_SSD = np.add(fill_SSD,source_SSD)
     tol = 1.1
     min_error = np.min(fill_SSD[np.nonzero(fill_SSD)])
     if(min_error < 0):
@@ -89,7 +68,7 @@ def get_patch_to_insert_transfer(tilesize, overlapsize, to_fill, to_fill_mask, t
     select = fill_SSD.flatten()[random.choice(toleranced.flatten())]
     tile_indices = np.array(np.where(fill_SSD==select)).flatten()
 
-    new_patch = texture[tile_indices[0]:tile_indices[0]+tilesize, tile_indices[1]:tile_indices[1]+tilesize,:]
+    new_patch = texture[tile_indices[0]:(tile_indices[0]+tilesize), tile_indices[int(tile_indices.size/2)]:(tile_indices[int(tile_indices.size/2)]+tilesize),:]
 
     horizontal_energy = np.sum((new_patch[:overlapsize,:,:] - to_fill[:overlapsize,:,:])**2, axis=2)
     vertical_energy = np.sum((new_patch[:,:overlapsize,:] - to_fill[:,:overlapsize,:])**2,axis=2)
@@ -97,8 +76,7 @@ def get_patch_to_insert_transfer(tilesize, overlapsize, to_fill, to_fill_mask, t
         for j in range(0,overlapsize):
             horizontal_energy[j,i] += min(np.take(horizontal_energy[:,i-1],[j-1,j,j+1],mode='clip'))
             vertical_energy[i,j] += min(np.take(vertical_energy[i-1,:],[j-1,j,j+1],mode='clip'))
-    #use argmin along axis to condense energy matrix into proper indices.
-    #use np where here
+
     horizontal_seam = np.zeros(tilesize).astype(int)
     vertical_seam = np.zeros(tilesize).astype(int)
     seam_mask = np.zeros((tilesize,tilesize,3)).astype(bool)
@@ -141,7 +119,6 @@ def synthesize_texture(source,mask,textures,tilesize,overlapsize,n_iter):
     #automatically calculate overlap size to best account for retexturing
     #need to have a set amount of iterations
     # options for naive tiling or strict seperation.
-
     adjsize = tilesize - overlapsize
     outsize = (mask.shape[0],mask.shape[1])
     imout = np.zeros((math.ceil(outsize[0] / adjsize) * adjsize + overlapsize, math.ceil(outsize[1] / adjsize) * adjsize + overlapsize, source.shape[2]))
@@ -207,7 +184,6 @@ def synthesize_texture(source,mask,textures,tilesize,overlapsize,n_iter):
 
 def transfer_texture(source,mask,target):
 
-    print(mask.shape)
     # BGR -> RGB:
     source_copy = source.copy()[..., ::-1]
     target = target[..., ::-1]
@@ -235,13 +211,9 @@ def transfer_texture(source,mask,target):
     # cv2.imshow("grey Image", grey_source/255.0)
     # cv2.waitKey(1000)
     mask_array = mask != 0
-    print(source_copy.shape)
-    print(source.shape)
-    
-    print(output.shape)
     source_copy[mask_array] = output[mask_array]
-    cv2.imshow("s Image", source/255.0)
-    cv2.waitKey(1000)
+    # cv2.imshow("s Image", source/255.0)
+    # cv2.waitKey(1000)
 
     # output_dir = './output'
     # output_path = "%s/res_img%02d.jpg" % (output_dir, i)

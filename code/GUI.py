@@ -51,6 +51,7 @@ class main:
 
     def start_retexture(self):
         self.multi_mask = self.export_mask()
+
         # custom_binary_mask = (self.multi_mask != 0) #the 0/1 mask of the drawn parts
         # self.texture_imgs is a list of the np arrays 
         # self.source_img is the uploaded source img (np array)
@@ -58,18 +59,18 @@ class main:
         tilesize=42
         overlapsize=7
 
-        texture_fill = retexture.synthesize_texture(self.source_img,self.multi_mask,self.texture_imgs,tilesize,overlapsize,1)
+        texture_fill = retexture.synthesize_texture(self.source_img,self.multi_mask,self.texture_imgs,tilesize,overlapsize,n_iterations)
         cv2.imwrite(os.path.join(SYNTH_PATH, f'{self.source_img_name}{self.texture_img_names}_synth_silhouette.png'),cv2.cvtColor(texture_fill.astype(np.uint8),cv2.COLOR_RGB2BGR))
 
         retextured = retexture.transfer_texture(self.source_img, self.multi_mask, texture_fill)
         cv2.imwrite(os.path.join(OUTPUT_PATH, f'{self.source_img_name}{self.texture_img_names}.png'), cv2.cvtColor(retextured.astype(np.uint8),cv2.COLOR_RGB2BGR))
         
-        self.draw_retextured(cv2.cvtColor(retextured,cv2.COLOR_RGB2BGR))
+        plt.imshow(retextured.astype(np.uint8)); plt.show()
 
     def export_mask(self):  #changing the background color canvas
         fileName = "./output/cloth-silhouettes/custom_mask"
         # save postscipt image 
-        self.canvas.postscript(file = fileName + '.eps') 
+        self.canvas.postscript(file = fileName + '.eps', height=self.source_img.shape[0], width=self.source_img.shape[1]) 
         # use PIL to convert to PNG 
         img = Image.open(fileName + '.eps') 
         fig = img.convert('RGBA').copy()
@@ -178,10 +179,6 @@ class main:
     
     def draw_mask(self):
         self.canvas_img = self.canvas.create_image(0, 0, anchor="nw", image=self.img)
-    
-    def draw_retextured(self, retexture):
-        self.canvas.config(width=retexture.width() - 8, height=retexture.height() - 8)
-        self.canvas_img = self.canvas.create_image(0, 0, anchor="nw", image=retexture)
 
     def paint(self,e):
         if self.old_x and self.old_y:
