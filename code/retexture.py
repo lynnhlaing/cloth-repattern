@@ -131,7 +131,7 @@ def get_patch_to_insert_transfer(tilesize, overlapsize, to_fill, to_fill_mask, t
 
     return masked_patch
 
-def synthesize_texture(source,mask,texture,tilesize,overlapsize,n_iter):
+def synthesize_texture(source,mask,textures,tilesize,overlapsize,n_iter):
     #assert for texture equal to mask regions
     #list set the number of vals in mask
     #4 seam min cut. left right, top and bottom
@@ -167,7 +167,6 @@ def synthesize_texture(source,mask,texture,tilesize,overlapsize,n_iter):
 
         source = np.pad(source, [(0,imout.shape[0]-source.shape[0]),(0,imout.shape[1]-source.shape[1]), (0,0)], mode='symmetric')
     
-
         # iterate over top left corner indices of tiles
         for y in range(0,imout.shape[0]-tilesize+1, adjsize):
             for x in range(0,imout.shape[1]-tilesize+1, adjsize):
@@ -178,6 +177,9 @@ def synthesize_texture(source,mask,texture,tilesize,overlapsize,n_iter):
                 
                 if fill_check == 0:
                     continue
+                most_common_texture = np.bincount(mask[y:y+tilesize, x:x + tilesize].flatten().astype(int))[1:]
+                texture_index = int(np.argmax(most_common_texture))
+                texture = np.array(textures[texture_index])
                 
                 # mask of what part has been filled
                 to_fill_mask = imout_mask[y:y+tilesize, x:x+tilesize]
@@ -205,12 +207,13 @@ def synthesize_texture(source,mask,texture,tilesize,overlapsize,n_iter):
 
 def transfer_texture(source,mask,target):
 
+    print(mask.shape)
     # BGR -> RGB:
-    source = source[..., ::-1]
+    source_copy = source.copy()[..., ::-1]
     target = target[..., ::-1]
     mask = mask * 255.0
 
-    lab = cv2.cvtColor(source, cv2.COLOR_BGR2LAB)
+    lab = cv2.cvtColor(source_copy, cv2.COLOR_BGR2LAB)
     l, _, _ = cv2.split(lab)
     clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
     cl = clahe.apply(l)
@@ -226,13 +229,17 @@ def transfer_texture(source,mask,target):
     image = alpha_blend.poisson_blend(grey_source, mask, target, mix = True, strength = 1)
 
     output = (np.clip(image, 0., 1.) * 255.).astype(np.uint8)
-    cv2.imshow("Output2 Image", output/255.0)
-    cv2.waitKey(1000)
+    # cv2.imshow("Output2 Image", output/255.0)
+    # cv2.waitKey(1000)
     grey_source = (np.clip(grey_source, 0., 1.) * 255.).astype(np.uint8)
-    cv2.imshow("grey Image", grey_source/255.0)
-    cv2.waitKey(1000)
+    # cv2.imshow("grey Image", grey_source/255.0)
+    # cv2.waitKey(1000)
     mask_array = mask != 0
-    source[mask_array] = output[mask_array]
+    print(source_copy.shape)
+    print(source.shape)
+    
+    print(output.shape)
+    source_copy[mask_array] = output[mask_array]
     cv2.imshow("s Image", source/255.0)
     cv2.waitKey(1000)
 
@@ -240,4 +247,4 @@ def transfer_texture(source,mask,target):
     # output_path = "%s/res_img%02d.jpg" % (output_dir, i)
     # cv2.imwrite(output_path, source[..., ::-1])
 
-    return source[..., ::-1]
+    return source_copy[..., ::-1]

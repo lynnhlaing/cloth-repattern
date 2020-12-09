@@ -76,9 +76,9 @@ def main():
         # print(outsize)
         for texture_path in input_textures:
             texture_name = os.path.splitext(os.path.split(texture_path)[-1])[0]
-            texture = cv2.imread(texture_path)
+            textures = cv2.imread(texture_path)
 
-            texture_fill = retexture.synthesize_texture(img,image_mask,texture,tilesize,overlapsize,1)
+            texture_fill = retexture.synthesize_texture(img,image_mask,textures,tilesize,overlapsize,3)
             print(texture_fill)
             cv2.imwrite(os.path.join(SYNTH_PATH, f'{img_name}_{texture_name}_synth_silhouette.png'),texture_fill)
             if not args["silent"]:
