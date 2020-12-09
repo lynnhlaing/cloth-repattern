@@ -16,6 +16,11 @@ import silhouette
 import utils
 
 # os.environ["PATH"] += ":/usr/local/bin:/usr/local/bin/gs"
+IMAGE_PATH = './data/images'
+TEXTURE_PATH = './data/textures'
+MASK_PATH = './output/cloth-silhouettes'
+SYNTH_PATH = './output/synthesized-silhouettes'
+OUTPUT_PATH = './output/final-output'
 
 class main:
     def __init__(self,master):
@@ -30,7 +35,9 @@ class main:
         self.binary_mask = []
 
         self.source_img = []
+        self.source_img_name = ''
         self.texture_imgs = []
+        self.texture_img_names = ''
         self.multi_mask = []
 
         self.drawWidgets()
@@ -44,10 +51,23 @@ class main:
 
     def start_retexture(self):
         self.multi_mask = self.export_mask()
-        custom_binary_mask = (self.multi_mask != 0) #the 0/1 mask of the drawn parts
+
+        # custom_binary_mask = (self.multi_mask != 0) #the 0/1 mask of the drawn parts
         # self.texture_imgs is a list of the np arrays 
         # self.source_img is the uploaded source img (np array)
+        n_iterations=3
+        tilesize=42
+        overlapsize=7
 
+        texture_fill = retexture.synthesize_texture(self.source_img,self.multi_mask,self.texture_imgs,tilesize,overlapsize,n_iterations)
+        cv2.imwrite(os.path.join(SYNTH_PATH, f'{self.source_img_name}{self.texture_img_names}_synth_silhouette.png'),cv2.cvtColor(texture_fill.astype(np.uint8),cv2.COLOR_RGB2BGR))
+
+        retextured = retexture.transfer_texture(self.source_img, self.multi_mask, texture_fill)
+        cv2.imwrite(os.path.join(OUTPUT_PATH, f'{self.source_img_name}{self.texture_img_names}.png'), cv2.cvtColor(retextured.astype(np.uint8),cv2.COLOR_RGB2BGR))
+        
+        plt.imshow(retextured.astype(np.uint8)); plt.show()
+
+<<<<<<< HEAD
         # synthesize_texture(mask, self.texture_imgs, ...
 
     def add_eraser(self):
@@ -58,10 +78,12 @@ class main:
         self.draw_texture_objects()
 
     
+=======
+>>>>>>> retexture-integration
     def export_mask(self):  #changing the background color canvas
         fileName = "./output/cloth-silhouettes/custom_mask"
         # save postscipt image 
-        self.canvas.postscript(file = fileName + '.eps') 
+        self.canvas.postscript(file = fileName + '.eps', height=self.source_img.shape[0], width=self.source_img.shape[1]) 
         # use PIL to convert to PNG 
         img = Image.open(fileName + '.eps') 
         fig = img.convert('RGBA').copy()
@@ -105,7 +127,8 @@ class main:
     def new_texture(self):  #adding a new texture
         #TODO: keep a list of texture paths as they come in to use in synthesize_texture
         ifile = filedialog.askopenfile(mode='rb',title='Choose a file')
-        path = Image.open(ifile)
+        path = Image.open(ifile).convert("RGB")
+        self.texture_img_names = self.texture_img_names + f'_{os.path.splitext(os.path.split(ifile.name)[-1])[0]}'
         self.texture_imgs.append(np.asarray(path))
         path = path.crop([ 0, 0, 40, 40])
 
@@ -120,9 +143,10 @@ class main:
 
     def upload_source(self):
         ifile = filedialog.askopenfile(mode='rb',title='Choose a source')
-        path = Image.open(ifile)
+        path = Image.open(ifile).convert("RGB")
         img = np.asarray(path)
         self.source_img = img
+        self.source_img_name = os.path.splitext(os.path.split(ifile.name)[-1])[0]
         self.binary_mask = silhouette.create_clothing_mask(img)
         self.prepare_mask()
         self.draw_mask()
