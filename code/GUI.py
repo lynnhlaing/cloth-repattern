@@ -34,8 +34,7 @@ class main:
         self.multi_mask = []
 
         self.drawWidgets()
-        # self.prepare_mask()
-        # self.draw_mask()
+        self.add_eraser()
 
         self.master.rowconfigure(1, weight=1)
 
@@ -49,6 +48,14 @@ class main:
         # self.source_img is the uploaded source img (np array)
 
         # synthesize_texture(mask, self.texture_imgs, ...
+
+    def add_eraser(self):
+        array = np.ones((40,40))*255
+        texture =  ImageTk.PhotoImage(image=Image.fromarray(array))
+        self.text_var.set('white')
+        self.textures.append((texture, 'white'))
+        self.draw_texture_objects()
+
     
     def export_mask(self):  #changing the background color canvas
         fileName = "./output/cloth-silhouettes/custom_mask"
@@ -209,8 +216,6 @@ class main:
         self.exit_button.grid(row=0,column=1,ipadx=10, ipady=5)
 
         self.controls.pack(side=LEFT, anchor=NW)
-
-        self.draw_texture_objects()
         
         self.canvas = Canvas(self.master,width=500,height=400,bg=self.color_bg)
         self.canvas.pack(fill=BOTH,expand=True)
